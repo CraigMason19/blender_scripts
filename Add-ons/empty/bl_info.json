@@ -1,0 +1,13 @@
+{
+  "name": "Empty Addon",
+  "description": "A empty script to define an addons structure.",
+  "author": "Craig Mason",
+  "version": [1, 0, 0],
+  "blender": [3, 0, 0],
+  "location": "View3D > Sidebar",
+  "category": "Render",
+  "warning": "",
+  "wiki_url": "https://github.com/yourusername/your-addon",
+  "tracker_url": "https://github.com/yourusername/your-addon/issues",
+  "support": "COMMUNITY"
+}
