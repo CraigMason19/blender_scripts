@@ -1,3 +1,7 @@
+"""
+Script that demonstrates how to add a side panel with a dropdown option in the text editor N panel 
+"""
+
 import bpy
 
 def update_background(self, context):
@@ -35,23 +39,6 @@ class BackgroundProperties(bpy.types.PropertyGroup):
         default='DARK_GRAY',
         update=update_background
     )
-
-
-
-## hmmmm better names, or I dont understand this
-
-# class BackgroundColorChangerPanel(bpy.types.Panel):
-#     bl_label = "Background Color Changer"
-#     bl_idname = "TEXTEDITOR_PT_background_color_changer"
-#     bl_space_type = 'TEXT_EDITOR'
-#     bl_region_type = 'UI'
-#     bl_category = "Background Color Changer"
-
-#     def draw(self, context):
-#         layout = self.layout
-#         layout.prop(context.scene.background_props, "background_theme")
-
-
 
 classes = [
     BackgroundColorChangerPanel, 
