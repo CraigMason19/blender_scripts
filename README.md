@@ -1,4 +1,6 @@
 # blender_scripts
-A collection of scripts useful for my various Blender projects.
+A collection of custom scripts useful for my various Blender projects. 
 
-Tested with Blender 4.2
+Each script is self‑contained; see its docstring for details.
+
+Tested with Blender 5.0
