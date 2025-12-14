@@ -1,9 +1,8 @@
 """
-
 """
 
 import bpy
-
+from dataclasses import dataclass
 
 bl_info = {
     "name": "Craig Tools - Change Background Color",
@@ -18,16 +17,38 @@ bl_info = {
 
 #region Logic
 
-colors = {
-    'WHITE': (1, 1, 1),
-    'LIGHT_GRAY': (0.5, 0.5, 0.5),
-    'DARK_GRAY': (0.251, 0.251, 0.251),
-    'CORNFLOWER_BLUE': (0.392, 0.584, 0.929),
+
+@dataclass
+class Color:
+    name: str
+    value: tuple
+
+    def genertate_description(self):
+        return f"Set the viewport background to {self.name}"
+    
+COLORS = {
+    'WHITE': Color("White", (1, 1, 1)),
+    'LIGHT_GRAY': Color("Light Gray", (0.5, 0.5, 0.5)),
+    'DARK_GRAY': Color("Dark Gray", (0.251, 0.251, 0.251)),
+    'CORNFLOWER_BLUE': Color("Cornflower Blue", (0.392, 0.584, 0.929)),
 }
 
+DEFAULT_ENUM =  'DARK_GRAY'
+DEFAULT_COLOR = (0.2, 0.2, 0.2)
+
+def generate_items():
+    items = []
+
+    for k, v in COLORS.items():
+        items.append(
+            (k, v.name, v.genertate_description())
+        )
+    
+    return items
+        
 def update_background_from_enum(self, context):
     themes = bpy.context.preferences.themes[0].view_3d.space.gradients
-    themes.high_gradient = colors[self.background_color_enum]
+    themes.high_gradient = COLORS[self.background_color_enum].value
 
 def update_background_from_color(self, context):
     themes = bpy.context.preferences.themes[0].view_3d.space.gradients
@@ -54,13 +75,8 @@ class BackgroundColorChangeProperties(bpy.types.PropertyGroup):
     background_color_enum: bpy.props.EnumProperty(
         name="Background Preset",
         description="The color to change the background to",
-        items=[
-            ('WHITE', "White", "Set background to white"),
-            ('LIGHT_GRAY', "Light Gray", "Set background to light gray"),
-            ('DARK_GRAY', "Dark Gray", "Set background to dark gray"),
-            ('CORNFLOWER_BLUE', "Cornflower Blue", "Set background to cornflower blue")
-        ],
-        default='DARK_GRAY',
+        items=generate_items(),
+        default=DEFAULT_ENUM,
         update=update_background_from_enum
     ) # type: ignore
     
@@ -71,7 +87,7 @@ class BackgroundColorChangeProperties(bpy.types.PropertyGroup):
         size=3,
         min=0.0,
         max=1.0,
-        default=(0.2, 0.2, 0.2),  # dark gray
+        default=DEFAULT_COLOR,
         update=update_background_from_color
     ) # type: ignore
 
