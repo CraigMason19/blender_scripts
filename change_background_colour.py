@@ -10,7 +10,7 @@ bl_info = {
     "version": (1, 0),
     "blender": (5, 0, 0),
     "location": "View3D > Sidebar > Craig Tools",
-    "description": "Easilly change the viewport background color",
+    "description": "Easily change the viewport background color",
     "category": "3D View",
 }
 
