@@ -11,14 +11,21 @@ bl_info = {
     "name": "Craig Tools - Basic Example",
     "author": "Craig",
     "version": (1, 0),
-    "blender": (4, 0, 0),
+    "blender": (5, 0, 0),
     "location": "View3D > Sidebar > Craig Tools",
     "description": "Adds a Craig Tools panel with a button",
     "category": "Object",
 }
 
 
-# Define the panel
+#region Logic
+
+
+#endregion
+
+
+#region UI
+
 class OBJECT_PT_craig_panel(bpy.types.Panel):
     bl_label = "Craig Tools"
     bl_idname = "OBJECT_PT_craig_panel"
@@ -31,7 +38,6 @@ class OBJECT_PT_craig_panel(bpy.types.Panel):
         layout.operator("object.craig_button", icon='PLAY')
 
 
-# Define the operator (what happens when button is clicked)
 class OBJECT_OT_craig_button(bpy.types.Operator):
     bl_idname = "object.craig_button"
     bl_label = "Run Craig Script"
@@ -44,8 +50,10 @@ class OBJECT_OT_craig_button(bpy.types.Operator):
 
         return {'FINISHED'}
 
+#endregion
 
-#region Register/unregister
+
+#region Register/Unregister
 
 classes = [
 	OBJECT_PT_craig_panel, 
@@ -61,6 +69,7 @@ def unregister():
         bpy.utils.unregister_class(cls)
 
 #endregion
+
 
 if __name__ == "__main__":
     register()
