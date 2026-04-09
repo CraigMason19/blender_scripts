@@ -1,4 +1,7 @@
 """
+Craig Tools - Create Bounding Box
+---------------------------------
+
 A simple script that demonstates the most basic setup for a custom script.
 
 It simple Creates a panel under 'Craig Tools' with a button that when pressed 
@@ -68,6 +71,7 @@ def create_bounding_box(context, display_wireframe):
     # Create cube
     bpy.ops.mesh.primitive_cube_add()
     cube = bpy.context.active_object
+    cube.name = obj.name + "_bb"
 
     # Scale, move and apply
     cube.scale = ((maxx - minx)/2, (maxy - miny)/2, (maxz - minz)/2)
