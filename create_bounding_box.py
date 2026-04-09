@@ -74,8 +74,8 @@ def create_bounding_box(context, display_wireframe):
     cube.name = obj.name + "_bb"
 
     # Scale, move and apply
-    cube.scale = ((maxx - minx)/2, (maxy - miny)/2, (maxz - minz)/2)
     cube.matrix_world = obj.matrix_world.copy()
+    cube.scale = ((maxx - minx)/2, (maxy - miny)/2, (maxz - minz)/2)
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
 
     if display_wireframe:
