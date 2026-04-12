@@ -2,6 +2,17 @@
 Craig Tools - Create Bounding Box
 ---------------------------------
 
+
+
+Creates a bfoo panel under the 'Craig Tools' tab in the 3D View sidebar. 
+
+
+
+
+
+
+
+
 A simple script that demonstates the most basic setup for a custom script.
 
 It simple Creates a panel under 'Craig Tools' with a button that when pressed 
