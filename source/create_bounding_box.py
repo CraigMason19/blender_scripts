@@ -55,7 +55,7 @@ bl_info = {
     "name": "Craig Tools - Create Bounding Box", # Used for installation
     "author": "Craig",
     "version": (1, 0),
-    "blender": (5, 0, 0),
+    "blender": (5, 0, 1),
     "location": "View3D > Sidebar > Craig Tools",
     "description": "Adds a bounding box around around a object",
     "category": "Object",
