@@ -96,6 +96,10 @@ def create_AABB_bounding_box(context):
     if context.scene.craig_bbox_wireframe:
         bpy.context.object.display_type = 'WIRE'
 
+
+def create_OBB_bounding_box(context):
+    pass
+
 #endregion
 
 
