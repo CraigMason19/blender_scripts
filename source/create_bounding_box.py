@@ -103,6 +103,11 @@ bpy.types.Scene.craig_bbox_wireframe = bpy.props.BoolProperty(
     default=True
 )
 
+bpy.types.Scene.craig_bbox_3d_mode = bpy.props.BoolProperty(
+    name="3D Mode",
+    description="Create a Bounding Box Cube (3D) or Plane (2D)",
+    default=True
+)
 
 class OBJECT_PT_create_bounding_box_panel(bpy.types.Panel):
     bl_label = "Create Bounding Box"
@@ -115,6 +120,7 @@ class OBJECT_PT_create_bounding_box_panel(bpy.types.Panel):
         layout = self.layout
 
         layout.prop(context.scene, "craig_bbox_wireframe")
+        layout.prop(context.scene, "craig_bbox_3d_mode")
         layout.operator("object.create_bounding_box_button", icon='PLAY')
 
 
