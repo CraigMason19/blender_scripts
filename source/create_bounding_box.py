@@ -64,7 +64,7 @@ bl_info = {
 
 #region Logic
 
-def create_bounding_box(context, display_wireframe):
+def create_AABB_bounding_box(context):
     """
     Creates a bounding box around a object matching it's location and 
     rotation, but will be of unit scale.
@@ -89,7 +89,7 @@ def create_bounding_box(context, display_wireframe):
     cube.scale = ((maxx - minx)/2, (maxy - miny)/2, (maxz - minz)/2)
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
 
-    if display_wireframe:
+    if context.scene.craig_bbox_wireframe:
         bpy.context.object.display_type = 'WIRE'
 
 #endregion
@@ -143,7 +143,8 @@ class OBJECT_OT_create_bounding_box_button(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        create_bounding_box(context, context.scene.craig_bbox_wireframe)
+        if context.scene.craig_bbox_alignment == "AABB":
+            create_AABB_bounding_box(context)
 
         self.report({'INFO'}, "Bounding box creation successful.")
         print("Craig Tools: Bounding box creation successful.")
