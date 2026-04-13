@@ -76,8 +76,8 @@ def create_AABB_bounding_box(context):
         return
     
 
-    minx, miny, minz = obj.bound_box[0]
-    maxx, maxy, maxz = obj.bound_box[6]
+    min_x, min_y, min_z = obj.bound_box[0]
+    max_x, max_y, max_z = obj.bound_box[6]
 
     # Create cube or plane
     if context.scene.craig_bbox_3d_mode:
@@ -90,7 +90,7 @@ def create_AABB_bounding_box(context):
 
     # Scale, move and apply
     cube.matrix_world = obj.matrix_world.copy()
-    cube.scale = ((maxx - minx)/2, (maxy - miny)/2, (maxz - minz)/2)
+    cube.scale = ((max_x - min_x)/2, (max_y - min_y)/2, (max_z - min_z)/2)
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
 
     if context.scene.craig_bbox_wireframe:
