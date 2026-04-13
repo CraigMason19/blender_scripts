@@ -109,6 +109,17 @@ bpy.types.Scene.craig_bbox_3d_mode = bpy.props.BoolProperty(
     default=True
 )
 
+bpy.types.Scene.craig_bbox_alignment = bpy.props.EnumProperty(
+    name="Bounding Box Alignment",
+    description="Choose AABB or OBB",
+    items=[
+        ("AABB", "AABB (Axis Aligned Bounding Box)", "Axis-aligned bounding box"),
+        ("OBB", "OBB (Oriented Bounding Box)", "Oriented bounding box"),
+    ],
+    default="AABB"
+)
+
+
 class OBJECT_PT_create_bounding_box_panel(bpy.types.Panel):
     bl_label = "Create Bounding Box"
     bl_idname = "OBJECT_PT_create_bounding_box_panel"
@@ -121,6 +132,8 @@ class OBJECT_PT_create_bounding_box_panel(bpy.types.Panel):
 
         layout.prop(context.scene, "craig_bbox_wireframe")
         layout.prop(context.scene, "craig_bbox_3d_mode")
+        layout.prop(context.scene, "craig_bbox_alignment")
+
         layout.operator("object.create_bounding_box_button", icon='PLAY')
 
 
