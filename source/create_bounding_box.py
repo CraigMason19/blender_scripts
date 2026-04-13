@@ -79,8 +79,12 @@ def create_AABB_bounding_box(context):
     minx, miny, minz = obj.bound_box[0]
     maxx, maxy, maxz = obj.bound_box[6]
 
-    # Create cube
-    bpy.ops.mesh.primitive_cube_add()
+    # Create cube or plane
+    if context.scene.craig_bbox_3d_mode:
+        bpy.ops.mesh.primitive_cube_add()
+    else:
+        bpy.ops.mesh.primitive_plane_add()
+    
     cube = bpy.context.active_object
     cube.name = obj.name + "_bb"
 
