@@ -67,7 +67,7 @@ bl_info = {
 # Base class
 # -----------------------------
 @dataclass
-class AABBBase:
+class AABB_Base:
     min: Vector
     max: Vector
 
@@ -84,7 +84,7 @@ class AABBBase:
 # 3D AABB (cube)
 # -----------------------------
 @dataclass
-class AABB_3D(AABBBase):
+class AABB_3D(AABB_Base):
 
     @property
     def verts(self):
@@ -114,7 +114,7 @@ class AABB_3D(AABBBase):
 # plane: "XY", "XZ", "YZ"
 # -----------------------------
 @dataclass
-class AABB_2D(AABBBase):
+class AABB_2D(AABB_Base):
     plane: str = "XY"   # XY, XZ, YZ
 
     @property
