@@ -66,25 +66,25 @@ bl_info = {
 
 def create_AABB_bounding_box(context):
     """
-    Creates a bounding box around a object matching it's location and 
-    rotation, but will be of unit scale.
+    Creates a bounding box that is aligned to the world axis.
     """
+
+    # Grab a reference to the object that the operator was used on.
     obj = context.active_object
 
     if obj is None:
         print("No active object selected.")
         return
     
-
-    min_x, min_y, min_z = obj.bound_box[0]
-    max_x, max_y, max_z = obj.bound_box[6]
-
     # Create cube or plane
     if context.scene.craig_bbox_3d_mode:
         bpy.ops.mesh.primitive_cube_add()
     else:
-        bpy.ops.mesh.primitive_plane_add()
-    
+        bpy.ops.mesh.primitive_plane_add()  
+
+    min_x, min_y, min_z = obj.bound_box[0]
+    max_x, max_y, max_z = obj.bound_box[6]
+
     cube = bpy.context.active_object
     cube.name = obj.name + "_bb"
 
@@ -93,6 +93,7 @@ def create_AABB_bounding_box(context):
     cube.scale = ((max_x - min_x)/2, (max_y - min_y)/2, (max_z - min_z)/2)
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
 
+    # Set Display mode
     if context.scene.craig_bbox_wireframe:
         bpy.context.object.display_type = 'WIRE'
 
