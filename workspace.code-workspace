@@ -4,5 +4,14 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"cSpell.words": [
+			"datablock",
+			"depsgraph",
+			"idname",
+			"mathutils",
+			"pydata",
+			"verts"
+		]
+	}
 }
