@@ -219,7 +219,29 @@ class AABB_2D(AABB_Base):
     def faces(self):
         return [(0, 1, 2, 3)]
 
+# -----------------------------
+# BlenderBB
+# -----------------------------
+class BlenderBB:
+    def __init__(self, obj):
+        # obj.bound_box is in local space
+        local_corners = [Vector(corner) for corner in obj.bound_box]
+        self.verts = local_corners
 
+        # Transform to world space
+        # self.verts = [obj.matrix_world @ v for v in local_corners]
+
+    @property
+    def faces(self):
+        return [
+            (0,1,2,3),
+            (4,5,6,7),
+            (0,1,5,4),
+            (2,3,7,6),
+            (0,3,7,4),
+            (1,2,6,5),
+        ]
+    
 # -----------------------------
 # OBB_3D
 # -----------------------------
@@ -308,8 +330,7 @@ class OBB_3D:
             (0,4,5,1), (2,3,7,6),
             (0,2,6,4), (1,5,7,3)
         ]
-    
-    
+        
 def create_AABB_bounding_box(context):
     """
     Creates a bounding box that is aligned to the world axis.
@@ -380,6 +401,41 @@ def create_AABB_bounding_box(context):
     eval_obj.to_mesh_clear()
 
 
+def create_blender_bounding_box(context):
+    """
+    Creates a bounding box using Blender's built-in bound_box.
+    This matches the 'Bounds' display in the viewport.
+    """
+    obj = context.active_object
+
+    if obj is None:
+        print("No active object selected.")
+        return
+
+    blender_bb = BlenderBB(obj)
+
+    blenderbb_name = obj.name + "_blender_bb"
+
+    # Create mesh + object.
+    blenderbb_mesh = bpy.data.meshes.new(blenderbb_name)
+    blenderbb_obj = bpy.data.objects.new(blenderbb_name, blenderbb_mesh)
+    blenderbb_obj.matrix_world = obj.matrix_world.copy()
+    bpy.context.collection.objects.link(blenderbb_obj)
+
+    blenderbb_mesh.from_pydata(blender_bb.verts, [], blender_bb.faces)
+    blenderbb_mesh.update()
+
+    # Select + set origin
+    bpy.ops.object.select_all(action='DESELECT')
+    blenderbb_obj.select_set(True)
+    bpy.context.view_layer.objects.active = blenderbb_obj
+    bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
+
+    # Wireframe display?
+    if context.scene.craig_bbox_wireframe:
+        blenderbb_obj.display_type = 'WIRE'
+
+
 def create_OBB_bounding_box(context):
     # Grab a reference to the object that the operator was used on.
     obj = context.active_object
@@ -429,6 +485,17 @@ def create_OBB_bounding_box(context):
 
 #region UI
 
+bpy.types.Scene.craig_bbox_alignment = bpy.props.EnumProperty(
+    name="Bounding Box Alignment",
+    description="Choose between AABB (Axis Aligned Bounding Box), BlenderBB (Blender Bounds Box) or OBB (Oriented Bounding Box)",
+    items=[
+        ("AABB", "AABB (Axis Aligned Bounding Box)", "Axis-aligned bounding box"),
+        ("BlenderBB", "BlenderBB (Blender Bounds Box)", "Blender bounds box"),
+        ("OBB", "OBB (Oriented Bounding Box)", "Oriented bounding box"),
+    ],
+    default="AABB"
+)
+
 bpy.types.Scene.craig_bbox_wireframe = bpy.props.BoolProperty(
     name="Wireframe",
     description="Display bounding box as wireframe",
@@ -452,16 +519,6 @@ bpy.types.Scene.craig_bbox_plane = bpy.props.EnumProperty(
     default="XY"
 )
 
-bpy.types.Scene.craig_bbox_alignment = bpy.props.EnumProperty(
-    name="Bounding Box Alignment",
-    description="Choose between AABB (Axis Aligned Bounding Box) or OBB (Oriented Bounding Box)",
-    items=[
-        ("AABB", "AABB (Axis Aligned Bounding Box)", "Axis-aligned bounding box"),
-        ("OBB", "OBB (Oriented Bounding Box)", "Oriented bounding box"),
-    ],
-    default="AABB"
-)
-
 
 class OBJECT_PT_create_bounding_box_panel(bpy.types.Panel):
     bl_label = "Create Bounding Box"
@@ -483,12 +540,12 @@ class OBJECT_PT_create_bounding_box_panel(bpy.types.Panel):
 
         # Disable 2D mode for OBB
         row = layout.row()
-        row.enabled = scene.craig_bbox_alignment != "OBB"
+        row.enabled = scene.craig_bbox_alignment == "AABB"
         row.prop(scene, "craig_bbox_3d_mode")
 
         # Disable plane selection when 3D mode is enabled OR alignment is OBB
         row = layout.row()
-        row.enabled = (not scene.craig_bbox_3d_mode) and (scene.craig_bbox_alignment != "OBB")
+        row.enabled = (not scene.craig_bbox_3d_mode) and (scene.craig_bbox_alignment == "AABB")
         row.prop(scene, "craig_bbox_plane")
 
         layout.operator("object.create_bounding_box_button", icon='PLAY')
@@ -501,10 +558,13 @@ class OBJECT_OT_create_bounding_box_button(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        if context.scene.craig_bbox_alignment == "AABB":
-            create_AABB_bounding_box(context)
-        elif context.scene.craig_bbox_alignment == "OBB":
-            create_OBB_bounding_box(context)
+        match context.scene.craig_bbox_alignment:
+            case "AABB":
+                create_AABB_bounding_box(context)
+            case "OBB":
+                create_OBB_bounding_box(context)
+            case "BlenderBB":
+                create_blender_bounding_box(context)
 
         self.report({'INFO'}, "Bounding box creation successful.")
         print("Craig Tools: Bounding box creation successful.")
