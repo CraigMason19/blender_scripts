@@ -399,6 +399,8 @@ def create_AABB_bounding_box(context):
 
     # IMPORTANT: free the evaluated mesh
     eval_obj.to_mesh_clear()
+    
+    return True
 
 
 def create_blender_bounding_box(context):
@@ -434,6 +436,8 @@ def create_blender_bounding_box(context):
     # Wireframe display?
     if context.scene.craig_bbox_wireframe:
         blenderbb_obj.display_type = 'WIRE'
+
+    return True
 
 
 def create_OBB_bounding_box(context):
@@ -479,6 +483,8 @@ def create_OBB_bounding_box(context):
 
     # IMPORTANT: free the evaluated mesh
     eval_obj.to_mesh_clear()
+
+    return True
 
 #endregion
 
@@ -558,18 +564,23 @@ class OBJECT_OT_create_bounding_box_button(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
+        ok = False
+
         match context.scene.craig_bbox_alignment:
             case "AABB":
-                create_AABB_bounding_box(context)
+                ok = create_AABB_bounding_box(context)
             case "OBB":
-                create_OBB_bounding_box(context)
+                ok = create_OBB_bounding_box(context)
             case "BlenderBB":
-                create_blender_bounding_box(context)
+                ok = create_blender_bounding_box(context)
+
+        if not ok:
+            self.report({'ERROR'}, "Bounding box creation failed — no valid object selected.")
+            return {'CANCELLED'}
 
         self.report({'INFO'}, "Bounding box creation successful.")
-        print("Craig Tools: Bounding box creation successful.")
-
         return {'FINISHED'}
+
 
 #endregion
 
