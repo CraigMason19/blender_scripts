@@ -8,7 +8,8 @@ Creates a bfoo panel under the 'Craig Tools' tab in the 3D View sidebar.
 
 
 
-
+("AABB", "AABB (Axis Aligned Bounding Box)", "Axis-aligned bounding box"),
+("OBB", "OBB (Oriented Bounding Box)", "Oriented bounding box"),
 
 
 
@@ -45,10 +46,11 @@ The script shows how to:
 
 
 """
+
 import bpy
 
 from dataclasses import dataclass
-from mathutils import Vector
+from mathutils import Vector, Matrix
 
 bl_info = {
     "name": "Craig Tools - Create Bounding Box", # Used for installation
@@ -62,6 +64,69 @@ bl_info = {
 
 
 #region Logic
+
+def eigenvectors_3x3(m):
+    # Convert Matrix to nested lists
+    a = [
+        [m[0][0], m[0][1], m[0][2]],
+        [m[1][0], m[1][1], m[1][2]],
+        [m[2][0], m[2][1], m[2][2]],
+    ]
+
+    # Jacobi eigenvalue algorithm
+    import math
+
+    def max_offdiag(a):
+        n = 3
+        max_val = 0.0
+        p = 0
+        q = 1
+        for i in range(n):
+            for j in range(i+1, n):
+                if abs(a[i][j]) > max_val:
+                    max_val = abs(a[i][j])
+                    p = i
+                    q = j
+        return p, q, max_val
+
+    # Initialize eigenvectors as identity
+    v = [[1,0,0],[0,1,0],[0,0,1]]
+
+    for _ in range(50):  # iterations
+        p, q, max_val = max_offdiag(a)
+        if max_val < 1e-10:
+            break
+
+        theta = 0.5 * math.atan2(2*a[p][q], a[q][q] - a[p][p])
+        c = math.cos(theta)
+        s = math.sin(theta)
+
+        # Rotate matrix A
+        for i in range(3):
+            api = a[p][i]
+            aqi = a[q][i]
+            a[p][i] = c*api - s*aqi
+            a[q][i] = s*api + c*aqi
+
+        for i in range(3):
+            aip = a[i][p]
+            aiq = a[i][q]
+            a[i][p] = c*aip - s*aiq
+            a[i][q] = s*aip + c*aiq
+
+        # Rotate eigenvectors
+        for i in range(3):
+            vip = v[i][p]
+            viq = v[i][q]
+            v[i][p] = c*vip - s*viq
+            v[i][q] = s*vip + c*viq
+
+    # Convert back to mathutils.Vector
+    return [
+        Vector((v[0][0], v[1][0], v[2][0])),
+        Vector((v[0][1], v[1][1], v[2][1])),
+        Vector((v[0][2], v[1][2], v[2][2])),
+    ]
 
 # -----------------------------
 # Base class
@@ -154,6 +219,95 @@ class AABB_2D(AABB_Base):
     def faces(self):
         return [(0, 1, 2, 3)]
 
+
+# -----------------------------
+# OBB_3D
+# -----------------------------
+@dataclass
+class OBB_3D:
+    verts_world: list[Vector]   # list of world-space vertices
+
+    @property
+    def rotation(self):
+        """Compute PCA rotation matrix (3x3)."""
+        # Compute centroid
+        centroid = sum(self.verts_world, Vector()) / len(self.verts_world)
+
+        # Build covariance matrix
+        cov = Matrix(((0,0,0),(0,0,0),(0,0,0)))
+        for v in self.verts_world:
+            d = v - centroid
+            cov[0][0] += d.x * d.x
+            cov[0][1] += d.x * d.y
+            cov[0][2] += d.x * d.z
+            cov[1][0] += d.y * d.x
+            cov[1][1] += d.y * d.y
+            cov[1][2] += d.y * d.z
+            cov[2][0] += d.z * d.x
+            cov[2][1] += d.z * d.y
+            cov[2][2] += d.z * d.z
+        
+        # Eigenvectors = principal axes
+        eig = eigenvectors_3x3(cov)
+        R = Matrix((eig[0], eig[1], eig[2])).transposed()
+        return R, centroid
+
+    def extents(self):
+        """Return half-sizes along PCA axes (hx, hy, hz)."""
+        R, centroid = self.rotation
+
+        # Transform verts into PCA space
+        local = [(R @ (v - centroid)) for v in self.verts_world]
+
+        xs = [v.x for v in local]
+        ys = [v.y for v in local]
+        zs = [v.z for v in local]
+
+        hx = (max(xs) - min(xs)) * 0.5
+        hy = (max(ys) - min(ys)) * 0.5
+        hz = (max(zs) - min(zs)) * 0.5
+
+        return hx, hy, hz
+
+
+    @property
+    def verts(self):
+        R, centroid = self.rotation
+
+        # Transform verts into PCA space
+        local = [(R @ (v - centroid)) for v in self.verts_world]
+
+        # Compute min/max in PCA space
+        xs = [v.x for v in local]
+        ys = [v.y for v in local]
+        zs = [v.z for v in local]
+
+        mn = Vector((min(xs), min(ys), min(zs)))
+        mx = Vector((max(xs), max(ys), max(zs)))
+
+        # 8 corners in local PCA space
+        corners_local = [
+            Vector((mn.x, mn.y, mn.z)),
+            Vector((mn.x, mn.y, mx.z)),
+            Vector((mn.x, mx.y, mn.z)),
+            Vector((mn.x, mx.y, mx.z)),
+            Vector((mx.x, mn.y, mn.z)),
+            Vector((mx.x, mn.y, mx.z)),
+            Vector((mx.x, mx.y, mn.z)),
+            Vector((mx.x, mx.y, mx.z)),
+        ]
+
+        # Transform back to world space
+        corners_world = [(R.transposed() @ v) + centroid for v in corners_local]
+        return corners_world
+
+    @property
+    def faces(self):
+        return [
+            (0,1,3,2), (4,6,7,5),
+            (0,4,5,1), (2,3,7,6),
+            (0,2,6,4), (1,5,7,3)
+        ]
     
     
 def create_AABB_bounding_box(context):
@@ -189,14 +343,16 @@ def create_AABB_bounding_box(context):
         max(v.z for v in world_verts)
     ))
 
+
     # Create cube or plane
     if context.scene.craig_bbox_3d_mode:
         aabb = AABB_3D(min_corner, max_corner)
-        aabb_name = obj.name + "_bb"
+        aabb_name = obj.name + "_aabb"
     else:
         plane = context.scene.craig_bbox_plane  # XY / XZ / YZ
         aabb = AABB_2D(min_corner, max_corner, plane)
-        aabb_name = f"{obj.name}_bb_{plane}"
+        aabb_name = f"{obj.name}_aabb_{plane}"
+
 
     # Build the bounding box mesh:
     # 1. Create a new mesh datablock
@@ -225,7 +381,48 @@ def create_AABB_bounding_box(context):
 
 
 def create_OBB_bounding_box(context):
-    pass
+    # Grab a reference to the object that the operator was used on.
+    obj = context.active_object
+
+    if obj is None:
+        print("No active object selected.")
+        return
+
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    eval_obj = obj.evaluated_get(depsgraph)
+    mesh = eval_obj.to_mesh()  # use the evaluated mesh (with modifiers applied); use obj.data for the original base mesh without modifiers
+
+
+    world_verts = [obj.matrix_world @ v.co for v in mesh.vertices]
+
+    obb = OBB_3D(world_verts)
+    obb_name = obj.name + "_obb"
+
+
+    # Build the bounding box mesh:
+    # 1. Create a new mesh datablock
+    # 2. Create an object using that mesh
+    # 3. Link the object into the active collection
+    # 4. Fill the mesh with the AABB/OBB vertices and faces
+    # 5. Finalize the mesh so Blender can use it
+    obb_mesh = bpy.data.meshes.new(obb_name)
+    obb_obj = bpy.data.objects.new(obb_name, obb_mesh)
+    bpy.context.collection.objects.link(obb_obj)
+    obb_mesh.from_pydata(obb.verts, [], obb.faces)
+    obb_mesh.update()
+
+    # Make it selected + active + set origin to geometry
+    bpy.ops.object.select_all(action='DESELECT')
+    obb_obj.select_set(True)
+    bpy.context.view_layer.objects.active = obb_obj
+    bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
+
+    # Enable wireframe?
+    if context.scene.craig_bbox_wireframe:
+        obb_obj.display_type = 'WIRE'
+
+    # IMPORTANT: free the evaluated mesh
+    eval_obj.to_mesh_clear()
 
 #endregion
 
@@ -277,18 +474,25 @@ class OBJECT_PT_create_bounding_box_panel(bpy.types.Panel):
         layout = self.layout
         scene = context.scene
 
-        layout.prop(scene, "craig_bbox_wireframe")
-        layout.prop(scene, "craig_bbox_3d_mode")
-
-        # Disable plane selection when 3D mode is enabled
-        row = layout.row()
-        row.enabled = not scene.craig_bbox_3d_mode
-        row.prop(scene, "craig_bbox_plane")
-        
+        # Alignment selector (always enabled)
         row = layout.row()
         row.prop(scene, "craig_bbox_alignment")
 
+        # Wireframe toggle
+        layout.prop(scene, "craig_bbox_wireframe")
+
+        # Disable 2D mode for OBB
+        row = layout.row()
+        row.enabled = scene.craig_bbox_alignment != "OBB"
+        row.prop(scene, "craig_bbox_3d_mode")
+
+        # Disable plane selection when 3D mode is enabled OR alignment is OBB
+        row = layout.row()
+        row.enabled = (not scene.craig_bbox_3d_mode) and (scene.craig_bbox_alignment != "OBB")
+        row.prop(scene, "craig_bbox_plane")
+
         layout.operator("object.create_bounding_box_button", icon='PLAY')
+
 
 
 class OBJECT_OT_create_bounding_box_button(bpy.types.Operator):
@@ -299,6 +503,8 @@ class OBJECT_OT_create_bounding_box_button(bpy.types.Operator):
     def execute(self, context):
         if context.scene.craig_bbox_alignment == "AABB":
             create_AABB_bounding_box(context)
+        elif context.scene.craig_bbox_alignment == "OBB":
+            create_OBB_bounding_box(context)
 
         self.report({'INFO'}, "Bounding box creation successful.")
         print("Craig Tools: Bounding box creation successful.")
