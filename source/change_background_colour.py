@@ -24,7 +24,7 @@ class Color:
     name: str
     value: tuple
 
-    def genertate_description(self):
+    def generate_description(self):
         return f"Set the viewport background to {self.name}"
     
 COLORS = {
@@ -42,7 +42,7 @@ def generate_items():
 
     for k, v in COLORS.items():
         items.append(
-            (k, v.name, v.genertate_description())
+            (k, v.name, v.generate_description())
         )
     
     return items
