@@ -1,8 +1,12 @@
 """
+Craig Tools - Change Background Color
+---------------------------------
 
+Allows you to easily change the background colour of the viewport.
 """
 
 import bpy
+
 from dataclasses import dataclass
 
 bl_info = {
@@ -60,18 +64,6 @@ def update_background_from_color(self, context):
 
 #region UI
 
-class BackgroundColorChangePanel(bpy.types.Panel):
-    bl_label = "Change Background Color"
-    bl_idname = "VIEW3D_PT_change_background_color"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = "Craig Tools"
-
-    def draw(self, context):
-        layout = self.layout
-        layout.prop(context.scene.background_color_change_props, "background_color_enum")
-        layout.prop(context.scene.background_color_change_props, "background_color")
-
 class BackgroundColorChangeProperties(bpy.types.PropertyGroup):
     background_color_enum: bpy.props.EnumProperty(
         name="Background Preset",
@@ -91,6 +83,19 @@ class BackgroundColorChangeProperties(bpy.types.PropertyGroup):
         default=DEFAULT_COLOR,
         update=update_background_from_color
     ) # type: ignore
+
+    
+class BackgroundColorChangePanel(bpy.types.Panel):
+    bl_label = "Change Background Color"
+    bl_idname = "VIEW3D_PT_change_background_color"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "Craig Tools"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(context.scene.background_color_change_props, "background_color_enum")
+        layout.prop(context.scene.background_color_change_props, "background_color")
 
 #endregion
 
