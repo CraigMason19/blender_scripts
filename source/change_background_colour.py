@@ -9,6 +9,7 @@ import bpy
 
 from dataclasses import dataclass
 
+
 bl_info = {
     "name": "Craig Tools - Change Background Color",
     "author": "Craig",
@@ -28,25 +29,26 @@ class Color:
     name: str
     value: tuple
 
-    def generate_description(self):
-        return f"Set the viewport background to {self.name}"
+    @property
+    def desc(self) -> str:
+        return f"Set the viewport background to {self.name}."
     
 COLOR_MAP = {
-    'WHITE': Color("White", (1, 1, 1)),
-    'LIGHT_GRAY': Color("Light Gray", (0.5, 0.5, 0.5)),
-    'DARK_GRAY': Color("Dark Gray", (0.251, 0.251, 0.251)),
     'CORNFLOWER_BLUE': Color("Cornflower Blue", (0.392, 0.584, 0.929)),
+    'DARK_GRAY': Color("Dark Gray", (0.251, 0.251, 0.251)),
+    'LIGHT_GRAY': Color("Light Gray", (0.5, 0.5, 0.5)),
+    'WHITE': Color("White", (1, 1, 1)),
 }
 
-DEFAULT_ENUM =  'DARK_GRAY'
-DEFAULT_COLOR = (0.2, 0.2, 0.2)
+DEFAULT_ENUM =  'LIGHT_GRAY'
+DEFAULT_COLOR = (0.5, 0.5, 0.5)
 
 def generate_items():
     items = []
 
     for k, v in COLOR_MAP.items():
         items.append(
-            (k, v.name, v.generate_description())
+            (k, v.name, v.desc)
         )
     
     return items
