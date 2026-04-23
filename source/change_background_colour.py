@@ -31,7 +31,7 @@ class Color:
     def generate_description(self):
         return f"Set the viewport background to {self.name}"
     
-COLORS = {
+COLOR_MAP = {
     'WHITE': Color("White", (1, 1, 1)),
     'LIGHT_GRAY': Color("Light Gray", (0.5, 0.5, 0.5)),
     'DARK_GRAY': Color("Dark Gray", (0.251, 0.251, 0.251)),
@@ -44,7 +44,7 @@ DEFAULT_COLOR = (0.2, 0.2, 0.2)
 def generate_items():
     items = []
 
-    for k, v in COLORS.items():
+    for k, v in COLOR_MAP.items():
         items.append(
             (k, v.name, v.generate_description())
         )
@@ -53,7 +53,7 @@ def generate_items():
         
 def update_background_from_enum(self, context):
     themes = bpy.context.preferences.themes[0].view_3d.space.gradients
-    themes.high_gradient = COLORS[self.background_color_enum].value
+    themes.high_gradient = COLOR_MAP[self.background_color_enum].value
 
 def update_background_from_color(self, context):
     themes = bpy.context.preferences.themes[0].view_3d.space.gradients
