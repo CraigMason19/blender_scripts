@@ -7,6 +7,8 @@ modifiers and scale. The resultant mesh is placed into the root 'Scene Collectio
 
 This allows me to easily join multiple meshes into one for STL 3D printing. This 
 means I can keep the originals to modify.
+
+NOTE: Boolean cutters Should be in a collection different to the meshes.
 """
 
 import bpy
@@ -30,12 +32,130 @@ IDS = {
 }
 
 #region Logic
-        
-def foo(context):
+
+def get_collection(
+    context: bpy.types.Context,
+    props: "CollectionToMeshProperties"
+) -> bpy.types.Collection:
+
+    if not props.collection:
+        raise ValueError("No collection selected")
+    
+    return props.collection
+
+
+def duplicate_objects(
+    context : bpy.types.Context, 
+    collection : bpy.types.Collection
+) -> list[bpy.types.Object]:
+    
+    if not collection.objects: 
+        raise ValueError("Collection is empty") 
+
+    dupe_objects = []
+
+    for obj in collection.objects:
+        dupe = obj.copy()
+
+        if obj.data:
+            dupe.data = obj.data.copy()
+
+        context.scene.collection.objects.link(dupe)
+        dupe_objects.append(dupe)
+
+    return dupe_objects
+
+
+def apply_scale(
+    context: bpy.types.Context,
+    props: "CollectionToMeshProperties",
+    objects: list[bpy.types.Object] | None
+) -> None:
+
+    if not objects:
+        raise ValueError("Can't apply scale, No objects given") 
+    
+    if not props.apply_scale:
+        return   
+    
+    for obj in objects:
+        context.view_layer.objects.active = obj
+        bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+
+
+def apply_modifiers(
+    context: bpy.types.Context,
+    props: "CollectionToMeshProperties",
+    objects: list[bpy.types.Object] | None
+) -> None:
+
+    if not objects:
+        raise ValueError("Can't apply modifiers, No objects given") 
+
+    if not props.apply_modifiers:
+        return   
+    
+    for obj in objects:
+        context.view_layer.objects.active = obj
+
+        for mod in obj.modifiers:
+            try:
+                bpy.ops.object.modifier_apply(modifier=mod.name)
+            except:
+                raise ValueError(f"Can't apply modifier for {obj.name}")
+
+
+
+
+
+
+def collection_to_mesh(context : bpy.types.Context) -> None:
+    # Deselect everything before deletion to avoid StructRNA errors
+    bpy.ops.object.select_all(action='DESELECT')
+
+
+
+
     props = getattr(context.scene, IDS["props"])
 
-    if props.apply_scale:
-        print("Success!")
+    collection = get_collection(context, props)
+
+    dupe_objects = duplicate_objects(context, collection)
+    apply_scale(context, props, dupe_objects)
+    apply_modifiers(context, props, dupe_objects)
+
+
+    # Join
+    for dupe in dupe_objects:
+        dupe.select_set(True)
+
+    context.view_layer.objects.active = dupe_objects[0]
+    bpy.ops.object.join()
+
+    # Joined object (created by join)
+    joined_obj = context.view_layer.objects.active
+
+    # Rename joined mesh after the collection
+    joined_obj.name = f"{collection.name.lower()}_joined"
+    if joined_obj.data:
+        joined_obj.data.name = f"{collection.name.lower()}_joined_mesh"
+
+    # Ensure it's in the Scene Collection (avoid double-link error)
+    if joined_obj.name not in context.scene.collection.objects:
+        context.scene.collection.objects.link(joined_obj)
+
+    # # Deselect everything before deletion to avoid StructRNA errors
+    # bpy.ops.object.select_all(action='DESELECT')
+
+    # Delete duplicates safely
+    # for dupe in dupe_objects:
+    #     if dupe != joined_obj:
+    #         bpy.data.objects.remove(dupe, do_unlink=True)
+
+    # Select only the final mesh
+    # joined_obj.select_set(True)
+    # context.view_layer.objects.active = joined_obj
+
 
 #endregion
 
@@ -109,7 +229,12 @@ class CollectionToMeshButton(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        foo(context)
+        try:
+            collection_to_mesh(context)
+
+        except Exception as e:
+            self.report({'ERROR'}, f"Failed: {e}")
+            return {'CANCELLED'}
 
         self.report({'INFO'}, "Converted collection to mesh successfully.")
         return {'FINISHED'}
