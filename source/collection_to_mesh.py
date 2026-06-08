@@ -91,18 +91,20 @@ def apply_modifiers(
 
     if not objects:
         raise ValueError("Can't apply modifiers, No objects given") 
-
-    if not props.apply_modifiers:
-        return   
     
     for obj in objects:
         context.view_layer.objects.active = obj
 
-        for mod in obj.modifiers:
-            try:
-                bpy.ops.object.modifier_apply(modifier=mod.name)
-            except:
-                raise ValueError(f"Can't apply modifier for {obj.name}")
+        if props.apply_modifiers:
+            for mod in obj.modifiers:
+                try:
+                    bpy.ops.object.modifier_apply(modifier=mod.name)
+                except:
+                    raise ValueError(f"Can't apply modifier for {obj.name}")
+                
+        else:
+            for mod in obj.modifiers:
+                obj.modifiers.remove(mod)
 
 
 
